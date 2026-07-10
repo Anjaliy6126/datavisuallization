@@ -199,9 +199,6 @@ st.markdown("""
 # SIDEBAR — DATA UPLOAD & NAV
 # ----------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("## 🧭 Navigation")
-    st.success("📂 Dataset auto-loaded from the repo — no upload needed!")
-    st.markdown("---")
     section = st.radio(
         "Choose a section",
         [
