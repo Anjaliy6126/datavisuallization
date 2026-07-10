@@ -340,11 +340,6 @@ clean_df, clean_steps = clean_pipeline(raw_df)
 # ----------------------------------------------------------------------
 if section == "🏠 Overview":
     st.markdown("## 🏠 Project Overview")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("📱 Total Apps", f"{clean_df.shape[0]:,}")
-    c2.metric("⭐ Avg Rating", f"{clean_df['Rating'].mean():.2f}" if "Rating" in clean_df else "—")
-    c3.metric("🆓 Free Apps", f"{(clean_df['Type']=='Free').sum():,}" if "Type" in clean_df else "—")
-    c4.metric("🏷️ Categories", f"{clean_df['Category'].nunique():,}" if "Category" in clean_df else "—")
 
     st.markdown("### 🔍 Peek at the cleaned data")
     st.dataframe(clean_df.head(15), use_container_width=True)
