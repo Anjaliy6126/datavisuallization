@@ -6,12 +6,32 @@ A dark-themed, interactive Streamlit app built from the original notebook.
 import warnings
 warnings.filterwarnings("ignore")
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import streamlit as st
+
+# ----------------------------------------------------------------------
+# DATASET PATH — bundled in the same GitHub repo as this app
+# (https://github.com/Anjaliy6126/datavisuallization)
+# ----------------------------------------------------------------------
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_CANDIDATES = [
+    "googleplaystore_v2 (1).csv",
+    "googleplaystore_v2.csv",
+    "data/googleplaystore_v2 (1).csv",
+    "data/googleplaystore_v2.csv",
+]
+
+def find_bundled_csv():
+    for name in CSV_CANDIDATES:
+        path = os.path.join(APP_DIR, name)
+        if os.path.exists(path):
+            return path
+    return None
 
 # ----------------------------------------------------------------------
 # PAGE CONFIG
@@ -180,7 +200,7 @@ st.markdown("""
 # ----------------------------------------------------------------------
 with st.sidebar:
     st.markdown("## 🧭 Navigation")
-    uploaded_file = st.file_uploader("📂 Upload `googleplaystore_v2.csv`", type=["csv"])
+    st.success("📂 Dataset auto-loaded from the repo — no upload needed!")
     st.markdown("---")
     section = st.radio(
         "Choose a section",
@@ -198,7 +218,7 @@ with st.sidebar:
     )
     st.markdown("---")
     st.markdown("### 💡 Tip")
-    st.info("Upload the raw Play Store CSV to unlock the full cleaning + visualisation pipeline. No file? A demo dataset kicks in automatically.")
+    st.info("This app reads `googleplaystore_v2 (1).csv` directly from the GitHub repo it's deployed from.")
     st.markdown("Made with 💜 using **Streamlit**")
 
 # ----------------------------------------------------------------------
@@ -229,9 +249,9 @@ def make_demo_data(n=1200):
 
 
 @st.cache_data(show_spinner=False)
-def load_raw(file):
-    if file is not None:
-        return pd.read_csv(file)
+def load_raw(path):
+    if path is not None:
+        return pd.read_csv(path)
     return make_demo_data()
 
 
@@ -256,7 +276,7 @@ def clean_pipeline(raw: pd.DataFrame):
             df[col] = df[col].fillna(df[col].mode()[0])
 
     # Clean Price
-    if "Price" in df.columns and df["Price"].dtype == object:
+    if "Price" in df.columns and not pd.api.types.is_numeric_dtype(df["Price"]):
         df["Price"] = df["Price"].apply(lambda x: 0 if str(x) == "0" else float(str(x).replace("$", "")))
 
     # Clean Reviews
@@ -264,7 +284,7 @@ def clean_pipeline(raw: pd.DataFrame):
         df["Reviews"] = pd.to_numeric(df["Reviews"], errors="coerce").fillna(0).astype("int64")
 
     # Clean Installs
-    if "Installs" in df.columns and df["Installs"].dtype == object:
+    if "Installs" in df.columns and not pd.api.types.is_numeric_dtype(df["Installs"]):
         df["Installs"] = df["Installs"].apply(lambda v: int(str(v).replace(",", "").replace("+", "")) if pd.notnull(v) else 0)
 
     steps.append(("After type cleaning", df.shape))
@@ -307,9 +327,12 @@ def clean_pipeline(raw: pd.DataFrame):
     return df, steps
 
 
-raw_df = load_raw(uploaded_file)
-if uploaded_file is None:
-    st.toast("🧪 No file uploaded — showing a demo dataset so you can explore the app!", icon="🧪")
+csv_path = find_bundled_csv()
+raw_df = load_raw(csv_path)
+if csv_path is None:
+    st.toast("⚠️ Couldn't find the CSV in the repo — showing a demo dataset instead.", icon="⚠️")
+else:
+    st.toast(f"✅ Loaded dataset from {os.path.basename(csv_path)}", icon="✅")
 clean_df, clean_steps = clean_pipeline(raw_df)
 
 # ----------------------------------------------------------------------
